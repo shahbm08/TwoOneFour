@@ -1,0 +1,74 @@
+name: Deploy
+
+# Every push to main tests the form handler, then publishes the site to S3,
+# updates the form function, and clears the CloudFront cache. The AWS side is
+# created once with Terraform (see README); its outputs become the repository
+# variables used below.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-2
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: api
+      - run: npm test
+        working-directory: api
+
+  deploy:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Publish site files
+        run: |
+          # Pages are re-checked on every visit so an update shows at once;
+          # styles, scripts and images may be cached for an hour.
+          aws s3 sync site/ "s3://${{ vars.SITE_BUCKET }}/" --delete \
+            --exclude "*" --include "*.html" \
+            --cache-control "public, max-age=0, must-revalidate"
+          aws s3 sync site/ "s3://${{ vars.SITE_BUCKET }}/" --delete \
+            --exclude "*.html" \
+            --cache-control "public, max-age=3600"
+
+      - name: Update form function
+        run: |
+          cd api && zip -q ../forms.zip index.mjs && cd ..
+          aws lambda update-function-code \
+            --function-name "${{ vars.FORMS_FUNCTION }}" \
+            --zip-file fileb://forms.zip > /dev/null
+
+      - name: Clear CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.DISTRIBUTION_ID }}" \
+            --paths "/*" > /dev/null

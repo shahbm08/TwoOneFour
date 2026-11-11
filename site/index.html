@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TwoOneFour</title>
+  <meta name="description" content="TwoOneFour — building considered businesses with a long-term outlook. Launching 2027.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top" id="top">
+    <a class="brand" href="/" aria-label="TwoOneFour home">
+      <span class="brand-mark" aria-hidden="true">214</span>
+      <span class="brand-name">TwoOneFour</span>
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav id="nav" class="nav" aria-label="Main">
+      <a href="#about">About</a>
+      <a href="#focus">Focus</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- HERO: the one sentence that says what TwoOneFour is. -->
+    <section class="hero">
+      <p class="eyebrow">Launching 2027</p>
+      <h1>We build considered businesses, with patience, craft and a long&#8209;term outlook.</h1>
+      <a class="scroll-cue" href="#about">Discover</a>
+    </section>
+
+    <section class="band" aria-hidden="true">
+      <div class="band-panel p1"></div>
+      <div class="band-panel p2"></div>
+      <div class="band-panel p3"></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="about" id="about">
+      <h2 class="section-label">About</h2>
+      <div class="about-body">
+        <p class="lead">TwoOneFour is a new Australian business, currently in preparation.</p>
+        <p>We are taking the time to get the foundations right: the people we work with, the standards we hold ourselves to, and the things we want to be known for. This page will grow as we do.</p>
+      </div>
+    </section>
+
+    <!-- FOCUS: edit titles and text to match the business. -->
+    <section class="focus" id="focus">
+      <h2 class="section-label">Focus</h2>
+      <ol class="focus-list">
+        <li>
+          <span class="num">01</span>
+          <div>
+            <h3>Quality</h3>
+            <p>Fewer things, done properly. Every decision is weighed against how it will hold up in ten years.</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">02</span>
+          <div>
+            <h3>Partnership</h3>
+            <p>Long relationships with the people and suppliers we work alongside, built on trust and straight dealing.</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">03</span>
+          <div>
+            <h3>Design</h3>
+            <p>Careful attention to how things look, feel and work, from the first conversation to the final detail.</p>
+          </div>
+        </li>
+        <li>
+          <span class="num">04</span>
+          <div>
+            <h3>Community</h3>
+            <p>Rooted in Australia, with a responsibility to the places and people around us.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="contact" id="contact">
+      <h2 class="section-label">Contact</h2>
+      <div class="contact-grid">
+        <div>
+          <p class="lead">Get in touch.</p>
+          <p>Whether you would like to work with us, or simply hear more, we would be glad to hear from you.</p>
+        </div>
+        <form class="form" data-endpoint="/api/contact" novalidate>
+          <div class="field">
+            <label for="c-name">Name</label>
+            <input id="c-name" name="name" autocomplete="name" required maxlength="120">
+          </div>
+          <div class="field">
+            <label for="c-email">Email</label>
+            <input id="c-email" name="email" type="email" autocomplete="email" required maxlength="200">
+          </div>
+          <div class="field">
+            <label for="c-phone">Phone <span class="opt">(optional)</span></label>
+            <input id="c-phone" name="phone" type="tel" autocomplete="tel" maxlength="40">
+          </div>
+          <div class="field">
+            <label for="c-message">Message</label>
+            <textarea id="c-message" name="message" rows="5" required maxlength="4000"></textarea>
+          </div>
+          <!-- Left empty by people; bots tend to fill it in. -->
+          <div class="hp" aria-hidden="true">
+            <label for="c-website">Website</label>
+            <input id="c-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <label class="consent">
+            <input type="checkbox" name="consent" required>
+            <span>I agree to TwoOneFour storing my details to reply to me, as set out in the <a href="/privacy.html">privacy notice</a>.</span>
+          </label>
+          <button type="submit">Send message</button>
+          <p class="status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section class="newsletter">
+      <div>
+        <h2>Stay informed</h2>
+        <p>Hear when we launch. Occasional updates, never more.</p>
+      </div>
+      <form class="form inline" data-endpoint="/api/subscribe" novalidate>
+        <label class="sr" for="n-email">Email address</label>
+        <input id="n-email" name="email" type="email" autocomplete="email" placeholder="Email address" required maxlength="200">
+        <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
+        <button type="submit">Subscribe</button>
+        <p class="status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-brand">
+      <span class="brand-mark" aria-hidden="true">214</span>
+      <span>TwoOneFour</span>
+    </div>
+    <div class="foot-meta">
+      <p>Australia</p>
+      <p><a href="#contact">Get in touch</a></p>
+    </div>
+    <div class="foot-legal">
+      <a href="/privacy.html">Privacy</a>
+      <span>&copy; <span data-year>2026</span> TwoOneFour</span>
+    </div>
+  </footer>
+
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

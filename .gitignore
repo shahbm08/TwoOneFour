@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+
+# Terraform: state holds secrets and stays on the machine that runs it.
+infra/.terraform/
+infra/.build/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/terraform.tfvars
+infra/crash.log
+forms.zip

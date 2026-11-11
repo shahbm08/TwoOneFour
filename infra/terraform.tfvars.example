@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars and fill in.
+notify_email = "you@example.com"
+github_repo  = "shahbm08/TwoOneFour"
+
+# Only if this AWS account has no GitHub Actions OIDC provider yet:
+# create_github_oidc_provider = true

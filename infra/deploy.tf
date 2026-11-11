@@ -1,4 +1,5 @@
-# Lets GitHub Actions on the main branch of this repository publish the site.
+# Lets GitHub Actions publish the site, but only from a job running in the
+# repository's "production" environment (which waits for the owner's approval).
 # It can only write to the site bucket, clear the CloudFront cache and update
 # the form function's code.
 
@@ -29,7 +30,7 @@ resource "aws_iam_role" "deploy" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:environment:production"
         }
       }
     }]

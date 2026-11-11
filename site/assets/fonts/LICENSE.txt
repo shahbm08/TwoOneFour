@@ -1,0 +1,4 @@
+Inter (https://github.com/rsms/inter) and Space Grotesk
+(https://github.com/floriankarsten/space-grotesk) are licensed under the
+SIL Open Font License, Version 1.1: https://openfontlicense.org
+The files here are the Latin subsets as served by Google Fonts.

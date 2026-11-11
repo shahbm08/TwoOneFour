@@ -1,9 +1,11 @@
 name: Deploy
 
-# Every push to main tests the form handler, then publishes the site to S3,
-# updates the form function, and clears the CloudFront cache. The AWS side is
-# created once with Terraform (see README); its outputs become the repository
-# variables used below.
+# Every push to main is tested. Publishing then waits in the "production"
+# environment until the owner approves it in GitHub (an email arrives with a
+# Review deployments button). Only that approved job can obtain AWS access.
+#
+# Actions are pinned to exact commits so a changed tag can't slip in new code;
+# Dependabot proposes updates.
 
 on:
   push:
@@ -25,50 +27,69 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm ci --ignore-scripts
         working-directory: api
       - run: npm test
         working-directory: api
+      - name: No third-party resources in the site
+        run: |
+          if grep -rEn 'https?://' site --include='*.html' --include='*.css' --include='*.js' \
+               | grep -vE 'https://www\.maisongambu\.com|https://github\.com/|https://openfontlicense\.org'; then
+            echo "::error::The site must not load anything from another domain."; exit 1
+          fi
+      - name: No inline scripts or styles (the CSP would block them)
+        run: |
+          if grep -rEn '<script>|<script [^>]*>[^<]+</script>| style="|<style' site --include='*.html'; then
+            echo "::error::Move inline script or style into site/assets."; exit 1
+          fi
 
   deploy:
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AWS_DEPLOY_ROLE_ARN != ''
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Publish site files
+        env:
+          BUCKET: ${{ vars.SITE_BUCKET }}
         run: |
           # Pages are re-checked on every visit so an update shows at once;
           # styles, scripts and images may be cached for an hour.
-          aws s3 sync site/ "s3://${{ vars.SITE_BUCKET }}/" --delete \
+          aws s3 sync site/ "s3://$BUCKET/" --delete \
             --exclude "*" --include "*.html" \
             --cache-control "public, max-age=0, must-revalidate"
-          aws s3 sync site/ "s3://${{ vars.SITE_BUCKET }}/" --delete \
+          aws s3 sync site/ "s3://$BUCKET/" --delete \
             --exclude "*.html" \
             --cache-control "public, max-age=3600"
 
       - name: Update form function
+        env:
+          FUNCTION: ${{ vars.FORMS_FUNCTION }}
         run: |
-          cd api && zip -q ../forms.zip index.mjs && cd ..
-          aws lambda update-function-code \
-            --function-name "${{ vars.FORMS_FUNCTION }}" \
+          (cd api && zip -q ../forms.zip index.mjs)
+          aws lambda update-function-code --function-name "$FUNCTION" \
             --zip-file fileb://forms.zip > /dev/null
 
       - name: Clear CloudFront cache
+        env:
+          DISTRIBUTION: ${{ vars.DISTRIBUTION_ID }}
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id "${{ vars.DISTRIBUTION_ID }}" \
-            --paths "/*" > /dev/null
+          aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths "/*" > /dev/null

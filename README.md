@@ -1,14 +1,17 @@
 # TwoOneFour website
 
-The information site for **twoonefour.com.au**. It's a static page with a
-contact form and newsletter sign-up, hosted on AWS without a server.
+The website for **twoonefour.com.au**, an Australian IT consultancy. It's a
+static site with an animated hero, links to the MaisonGambu and Slottrix
+ventures, a contact form and a newsletter sign-up. It's hosted on AWS without a
+server. See [SECURITY.md](SECURITY.md) for how it is protected.
 
 ```
 visitor ──► CloudFront (HTTPS, twoonefour.com.au + www)
               ├─ /*      ──► S3 bucket (the files in site/)
               └─ /api/*  ──► Lambda (api/index.mjs)
                                ├─ contact form  ──► email to the owner (SES)
-                               └─ newsletter    ──► DynamoDB list + email notice
+                               ├─ newsletter    ──► DynamoDB list + email notice
+                               └─ rate limit    ──► DynamoDB counters (5 an hour)
 DNS: Route 53. Registration: GoDaddy (until 15-10-2027).
 ```
 
@@ -27,12 +30,13 @@ free allowances at this size. The GoDaddy renewal is separate.
 
 ## Editing the site
 
-All the words are in `site/index.html`. Colours and fonts are at the top of
-`site/assets/site.css`. Push to `main` and the live site updates in about a
-minute.
+All the words are in `site/index.html`. Colours are at the top of
+`site/assets/site.css`, and the hero animation is in `site/assets/site.js`.
+Push to `main`, approve the deployment in GitHub, and the live site updates
+about a minute later.
 
-The coloured panels under the headline stand in for photos. To use real images,
-put them in `site/assets/` and swap each `<div class="band-panel">` for an `<img>`.
+Keep everything in `site/assets/`: the security policy blocks inline scripts and
+styles, and anything loaded from another domain. The tests check both.
 
 ## First-time setup (once)
 
@@ -69,7 +73,20 @@ Terraform 1.6 or later.
 
 7. **Connect GitHub.** Run `terraform output github_variables`. In the GitHub
    repository, open Settings, then Secrets and variables, then Actions, then
-   Variables, and add each one. The next push to `main` publishes the site.
+   Variables, and add each one.
+
+8. **Require your approval for every deploy.** In GitHub, open Settings, then
+   Environments, then New environment, and name it `production`. Tick
+   **Required reviewers** and add yourself, and under Deployment branches choose
+   `main` only. AWS only trusts jobs running in this environment.
+
+9. **Protect the repository** (Settings):
+   - **Branches.** Add a rule for `main` that requires the `test` check to pass
+     and blocks force pushes and deletion.
+   - **Code security.** Turn on Dependabot alerts and security updates, secret
+     scanning and push protection, and private vulnerability reporting.
+   - **Your account.** Use two-factor authentication on GitHub, and MFA on the
+     AWS root user.
 
 The Terraform state (`infra/terraform.tfstate`) stays on the machine that ran
 it. Keep it safe, because it is needed for any later infrastructure change. It
@@ -77,8 +94,9 @@ is git-ignored on purpose, since it holds a secret.
 
 ## Notes
 
-- **Spam.** The forms have a hidden honeypot field. The function only answers
-  requests that come through CloudFront.
+- **Spam.** The forms have a hidden honeypot field and a limit of 5 sends per
+  visitor per hour. The function only answers requests that come through
+  CloudFront.
 - **Subscribers.** Sign-ups are in the DynamoDB table `twoonefour-subscribers`,
   which you can browse in the AWS console.
 - **SES sandbox.** It only delivers to verified addresses. That's fine here,

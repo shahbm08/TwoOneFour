@@ -17,6 +17,22 @@ resource "aws_dynamodb_table" "subscribers" {
   server_side_encryption { enabled = true }
 }
 
+# Per-visitor hourly counters for the form rate limit. Rows expire by themselves.
+resource "aws_dynamodb_table" "rate" {
+  name         = "${local.name}-form-rate"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+  attribute {
+    name = "id"
+    type = "S"
+  }
+  ttl {
+    attribute_name = "expiresAt"
+    enabled        = true
+  }
+  server_side_encryption { enabled = true }
+}
+
 # Sending email. The domain identity lets the site send as
 # website@twoonefour.com.au; DKIM records go into the zone automatically.
 resource "aws_sesv2_email_identity" "domain" {
@@ -85,6 +101,11 @@ resource "aws_iam_role_policy" "forms" {
         Action   = "dynamodb:PutItem"
         Resource = aws_dynamodb_table.subscribers.arn
       },
+      {
+        Effect   = "Allow"
+        Action   = "dynamodb:UpdateItem"
+        Resource = aws_dynamodb_table.rate.arn
+      },
     ]
   })
 }
@@ -111,6 +132,8 @@ resource "aws_lambda_function" "forms" {
       FROM_ADDRESS      = "website@${local.domain}"
       NOTIFY_ADDRESS    = var.notify_email
       SUBSCRIBERS_TABLE = aws_dynamodb_table.subscribers.name
+      RATE_TABLE        = aws_dynamodb_table.rate.name
+      RATE_LIMIT        = "5"
     }
   }
 

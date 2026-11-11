@@ -16,6 +16,23 @@ resource "aws_s3_bucket_ownership_controls" "site" {
   rule { object_ownership = "BucketOwnerEnforced" }
 }
 
+# Every change to a file is kept for 30 days, so a bad or unwanted deploy can be undone.
+resource "aws_s3_bucket_versioning" "site" {
+  bucket = aws_s3_bucket.site.id
+  versioning_configuration { status = "Enabled" }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "site" {
+  bucket     = aws_s3_bucket.site.id
+  depends_on = [aws_s3_bucket_versioning.site]
+  rule {
+    id     = "expire-old-versions"
+    status = "Enabled"
+    filter {}
+    noncurrent_version_expiration { noncurrent_days = 30 }
+  }
+}
+
 resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
   bucket = aws_s3_bucket.site.id
   rule {
@@ -73,6 +90,26 @@ resource "aws_cloudfront_function" "redirect_www" {
 
 resource "aws_cloudfront_response_headers_policy" "site" {
   name = "${local.name}-security-headers"
+  custom_headers_config {
+    items {
+      header   = "Permissions-Policy"
+      value    = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+      override = true
+    }
+    items {
+      header   = "Cross-Origin-Opener-Policy"
+      value    = "same-origin"
+      override = true
+    }
+    items {
+      header   = "Cross-Origin-Resource-Policy"
+      value    = "same-origin"
+      override = true
+    }
+  }
+  remove_headers_config {
+    items { header = "Server" }
+  }
   security_headers_config {
     strict_transport_security {
       access_control_max_age_sec = 31536000
@@ -90,7 +127,8 @@ resource "aws_cloudfront_response_headers_policy" "site" {
       override        = true
     }
     content_security_policy {
-      content_security_policy = "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+      # Everything comes from this site: no third-party scripts, styles or fonts.
+      content_security_policy = "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; upgrade-insecure-requests"
       override                = true
     }
   }

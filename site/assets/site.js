@@ -12,6 +12,9 @@
     menu();
     reveals();
     network();
+    tabs();
+    stepper();
+    entryCards();
     forms();
     var year = document.querySelector("[data-year]");
     if (year) year.textContent = String(new Date().getFullYear());
@@ -39,7 +42,7 @@
   }
 
   function reveals() {
-    var items = document.querySelectorAll(".reveal, .steps li");
+    var items = document.querySelectorAll(".reveal");
     if (reduceMotion || !("IntersectionObserver" in window)) {
       items.forEach(function (el) { el.classList.add("in"); });
       return;
@@ -101,14 +104,14 @@
           var ex = points[a].x - points[b].x, ey = points[a].y - points[b].y;
           var dist = Math.sqrt(ex * ex + ey * ey);
           if (dist < LINK) {
-            ctx.strokeStyle = "rgba(79,70,229," + (0.22 * (1 - dist / LINK)).toFixed(3) + ")";
+            ctx.strokeStyle = "rgba(29,92,255," + (0.22 * (1 - dist / LINK)).toFixed(3) + ")";
             ctx.lineWidth = 1;
             ctx.beginPath(); ctx.moveTo(points[a].x, points[a].y); ctx.lineTo(points[b].x, points[b].y); ctx.stroke();
           }
         }
       }
       for (var k = 0; k < points.length; k++) {
-        ctx.fillStyle = k % 3 === 0 ? "rgba(6,182,212,.75)" : "rgba(79,70,229,.6)";
+        ctx.fillStyle = k % 3 === 0 ? "rgba(56,189,248,.8)" : "rgba(29,92,255,.6)";
         ctx.beginPath(); ctx.arc(points[k].x, points[k].y, points[k].r, 0, Math.PI * 2); ctx.fill();
       }
       requestAnimationFrame(frame);
@@ -134,6 +137,77 @@
       new IntersectionObserver(function (e) { visible = e[0].isIntersecting; update(); }).observe(canvas);
     }
     update();
+  }
+
+  // Services tabs, with arrow-key support as the ARIA tabs pattern expects.
+  function tabs() {
+    var list = document.querySelector('[role="tablist"]');
+    if (!list) return;
+    var buttons = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+    function select(btn, focus) {
+      buttons.forEach(function (b) {
+        var on = b === btn;
+        b.setAttribute("aria-selected", String(on));
+        b.tabIndex = on ? 0 : -1;
+        document.getElementById(b.getAttribute("aria-controls")).hidden = !on;
+      });
+      if (focus) btn.focus();
+    }
+    buttons.forEach(function (b, i) {
+      b.addEventListener("click", function () { select(b); });
+      b.addEventListener("keydown", function (e) {
+        var n = null;
+        if (e.key === "ArrowRight") n = buttons[(i + 1) % buttons.length];
+        if (e.key === "ArrowLeft") n = buttons[(i - 1 + buttons.length) % buttons.length];
+        if (e.key === "Home") n = buttons[0];
+        if (e.key === "End") n = buttons[buttons.length - 1];
+        if (n) { e.preventDefault(); select(n, true); }
+      });
+    });
+  }
+
+  // Five-step process: advances by itself while on screen; a step can be clicked.
+  function stepper() {
+    var box = document.querySelector("[data-stepper]");
+    if (!box) return;
+    var steps = box.querySelectorAll(".step");
+    var texts = box.querySelectorAll("[data-step]");
+    var fill = box.querySelector(".step-fill");
+    var current = 0, timer = null, onScreen = false;
+
+    function show(i) {
+      current = i;
+      steps.forEach(function (s, j) {
+        s.classList.toggle("is-active", j === i);
+        s.classList.toggle("is-done", j < i);
+      });
+      texts.forEach(function (t, j) { t.hidden = j !== i; });
+      fill.style.width = ((i + 1) / steps.length) * 100 + "%";
+    }
+    function stop() { clearInterval(timer); timer = null; }
+    function play() {
+      stop();
+      if (reduceMotion || !onScreen) return;
+      timer = setInterval(function () {
+        if (current >= steps.length - 1) { stop(); return; }
+        show(current + 1);
+      }, 3200);
+    }
+
+    steps.forEach(function (s, i) { s.addEventListener("click", function () { show(i); stop(); }); });
+    box.querySelector(".restart").addEventListener("click", function () { show(0); play(); });
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (e) { onScreen = e[0].isIntersecting; onScreen ? play() : stop(); }, { threshold: 0.4 }).observe(box);
+    }
+    show(0);
+  }
+
+  // The two hero cards jump to the form with the right topic already chosen.
+  function entryCards() {
+    var select = document.getElementById("c-topic");
+    document.querySelectorAll("[data-topic]").forEach(function (a) {
+      a.addEventListener("click", function () { if (select) select.value = a.getAttribute("data-topic"); });
+    });
   }
 
   function forms() {

@@ -1,7 +1,7 @@
 # TwoOneFour website
 
 The website for **twoonefour.com.au**, an Australian IT consultancy. It's a
-static site with an animated hero, links to the MaisonGambu and Slottrix
+blue, Jeton-inspired static site with an animated hero, links to the MaisonGambu and Slottrix
 ventures, a contact form and a newsletter sign-up. It's hosted on AWS without a
 server. See [SECURITY.md](SECURITY.md) for how it is protected.
 

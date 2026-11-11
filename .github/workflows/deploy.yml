@@ -40,7 +40,7 @@ jobs:
       - name: No third-party resources in the site
         run: |
           if grep -rEn 'https?://' site --include='*.html' --include='*.css' --include='*.js' \
-               | grep -vE 'https://www\.maisongambu\.com|https://github\.com/|https://openfontlicense\.org'; then
+               | grep -vE 'https://www\.maisongambu\.com|https://www\.slottrix\.com|https://github\.com/|https://openfontlicense\.org|http://www\.w3\.org/2000/svg'; then
             echo "::error::The site must not load anything from another domain."; exit 1
           fi
       - name: No inline scripts or styles (the CSP would block them)
